@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de Devoluções — J&T</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f5f7fb, #101318);
+  --surface: light-dark(#fff, #171b21);
+  --surface2: light-dark(#f8fafc, #1d222a);
+  --text: light-dark(#172033, #eef2f7);
+  --muted: light-dark(#667085, #aab3c2);
+  --border: light-dark(#e4e8ef, #303742);
+  --primary: light-dark(#1457d9, #5d8cff);
+  --green: light-dark(#087443, #45d39a);
+  --red: light-dark(#b42318, #ff8178);
+  --amber: light-dark(#a15c00, #ffbd62);
+}
+* { box-sizing: border-box }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: var(--bg);
+  color: var(--text);
+}
+#app { min-height: 100vh; background: var(--bg); padding: 28px }
+.wrap { max-width: 1180px; margin: auto }
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+h1 { font-size: 32px; line-height: 1.1; margin: 6px 0 8px }
+.sub { color: var(--muted); margin: 0 }
+.clock { font-size: 13px; color: var(--muted); text-align: right }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.06);
+  margin-bottom: 18px;
+}
+
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap }
+.tab-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+  color: var(--text);
+}
+.tab-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 750;
+  margin-bottom: 7px;
+  color: var(--muted);
+}
+input, select, button { font: inherit }
+input, select {
+  width: 100%;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text);
+  padding: 0 12px;
+  outline: none;
+}
+input:focus, select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+button {
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.primary { background: var(--primary); color: white }
+.primary:hover { filter: brightness(1.08) }
+.ghost {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.ghost:hover { border-color: var(--primary); color: var(--primary) }
+.danger-btn {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+  border: 1px solid color-mix(in srgb, var(--red) 30%, transparent);
+}
+.danger-btn:hover { background: color-mix(in srgb, var(--red) 22%, transparent) }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 17px;
+}
+.stat .n { font-size: 28px; font-weight: 850; margin-top: 4px }
+.stat .l { font-size: 12px; color: var(--muted); font-weight: 700 }
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.toolbar .left { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+.chip {
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  color: var(--text);
+}
+.chip.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.search { max-width: 260px; height: 36px }
+
+.tablewrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 780px;
+}
+th, td {
+  text-align: left;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  vertical-align: middle;
+}
+th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  background: var(--surface2);
+  position: sticky;
+  top: 0;
+}
+tr:last-child td { border-bottom: 0 }
+tr:hover td { background: color-mix(in srgb, var(--primary) 4%, transparent) }
+.code { font-weight: 850; letter-spacing: .02em }
+.badge {
+  display: inline-flex;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.ok { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green) }
+.wait { background: color-mix(in srgb, var(--amber) 14%, transparent); color: var(--amber) }
+.today { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary) }
+.danger { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red) }
+.done { background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted) }
+
+.smallbtn {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  margin: 2px;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end }
+
+.empty { text-align: center; padding: 30px; color: var(--muted) }
+.note { font-size: 12px; color: var(--muted); margin-top: 10px }
+.note b { color: var(--text) }
+
+.toast {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 15px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 750;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: .2s;
+  z-index: 100;
+  max-width: 320px;
+}
+.toast.show { opacity: 1; transform: none }
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.25);
+}
+.modal h3 { margin: 0 0 8px; font-size: 18px }
+.modal p { margin: 0 0 16px; color: var(--muted); font-size: 14px }
+.modal .grid { grid-template-columns: 1fr; margin-bottom: 16px }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end }
+
+@media (max-width: 900px) {
+  .stats { grid-template-columns: repeat(3, 1fr) }
+}
+@media (max-width: 800px) {
+  #app { padding: 18px }
+  .top { display: block }
+  .clock { text-align: left; margin-top: 10px }
+  .grid { grid-template-columns: 1fr 1fr }
+  .grid .wide { grid-column: 1 / -1 }
+  .stats { grid-template-columns: 1fr 1fr }
+}
+@media (max-width: 500px) {
+  .grid { grid-template-columns: 1fr }
+  .grid .wide { grid-column: auto }
+  .stats { grid-template-columns: 1fr 1fr }
+  h1 { font-size: 26px }
+  .stat .n { font-size: 22px }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <div class="eyebrow">J&T • Controle operacional</div>
+        <h1>Controle de Devoluções</h1>
+        <p class="sub">Cadastre a ocorrência e saiba automaticamente quando o pacote estará liberado para devolução.</p>
+      </div>
+      <div class="clock" id="clock"></div>
+    </header>
+
+    <section class="panel">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="ocorrencias">Ocorrências</button>
+        <button class="tab-btn" data-tab="recebidas">Devoluções recebidas</button>
+      </div>
+
+      <div id="tabOcorrencias">
+        <div class="grid">
+          <div class="field wide">
+            <label>Código do pacote</label>
+            <input id="code" placeholder="Ex.: JT123456789" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Tipo de ocorrência</label>
+            <select id="type">
+              <option value="endereco">Endereço incorreto — 8 dias</option>
+              <option value="recusa">Recusa do cliente — mesmo dia</option>
+              <option value="ausencia">Ausência — 3 ocorrências</option>
+              <option value="mudanca">Mudança de endereço — mesmo dia</option>
+              <option value="impossibilidade">Impossibilidade de chegar — 8 dias</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Data da ocorrência</label>
+            <input id="date" type="date">
+          </div>
+          <button class="primary" id="add">Adicionar</button>
+        </div>
+        <div class="note">
+          <b>Ausência:</b> registre a 1ª ocorrência aqui. Depois use o botão <b>+ Ausência</b> na tabela para lançar a 2ª e a 3ª (em dias diferentes). Na 3ª ocorrência a devolução é liberada.
+        </div>
+      </div>
+
+      <div id="tabRecebidas" style="display:none">
+        <div class="grid">
+          <div class="field">
+            <label>Código do pacote</label>
+            <input id="recvCode" placeholder="Bipe o código" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Nome do motorista</label>
+            <input id="driver" placeholder="Nome completo" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Base</label>
+            <select id="base">
+              <option>F ATG-BA</option>
+              <option>F ITI-BA</option>
+              <option>F SBM-BA</option>
+            </select>
+          </div>
+          <button class="primary" id="receive">Registrar chegada</button>
+        </div>
+        <div class="note">Ao bipar/cadastrar, a data e hora de chegada são registradas automaticamente. Se o código existir em ocorrências, ele será marcado como recebido.</div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="l">TOTAL CADASTRADOS</div>
+        <div class="n" id="total">0</div>
+      </div>
+      <div class="stat">
+        <div class="l">DEVOLUÇÕES LIBERADAS</div>
+        <div class="n" id="released">0</div>
+      </div>
+      <div class="stat">
+        <div class="l">LIBERAM HOJE</div>
+        <div class="n" id="today">0</div>
+      </div>
+      <div class="stat">
+        <div class="l">PENDÊNCIAS</div>
+        <div class="n" id="waiting">0</div>
+      </div>
+      <div class="stat">
+        <div class="l">RECEBIDAS</div>
+        <div class="n" id="recvCount">0</div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:18px" id="occTable">
+      <div class="toolbar">
+        <div class="left">
+          <button class="chip active" data-filter="all">Todos</button>
+          <button class="chip" data-filter="released">Liberadas</button>
+          <button class="chip" data-filter="today">Hoje</button>
+          <button class="chip" data-filter="waiting">Pendentes</button>
+          <button class="chip" data-filter="received">Recebidas</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input class="search" id="search" placeholder="Buscar código...">
+          <button class="ghost smallbtn" id="exportCsv" title="Exportar CSV">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Ocorrência</th>
+              <th>Regra</th>
+              <th>Próximo passo / liberação</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="empty">Nenhum pacote cadastrado.</div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:18px;display:none" id="receivedTable">
+      <div class="toolbar">
+        <div class="left"><b>Histórico de devoluções recebidas</b></div>
+        <input class="search" id="recvSearch" placeholder="Buscar código ou motorista...">
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Data e hora da chegada</th>
+              <th>Motorista</th>
+              <th>Base</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="receivedRows"></tbody>
+        </table>
+        <div class="empty" id="receivedEmpty">Nenhuma devolução recebida.</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="modal-overlay" id="absenceModal">
+  <div class="modal">
+    <h3>Registrar nova ausência</h3>
+    <p id="absenceModalInfo">Pacote: —</p>
+    <div class="grid">
+      <div class="field">
+        <label>Data da nova ocorrência</label>
+        <input id="absenceDate" type="date">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" id="absenceCancel">Cancelar</button>
+      <button class="primary" id="absenceConfirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  let data = JSON.parse(localStorage.getItem('devolucoes_v2') || '[]');
+  let received = JSON.parse(localStorage.getItem('devolucoes_recebidas_v2') || '[]');
+  let filter = 'all';
+  let absenceTargetId = null;
+
+  if (!data.length) {
+    const old = JSON.parse(localStorage.getItem('devolucoes_demo') || '[]');
+    if (old.length) {
+      data = old.map(x => ({
+        ...x,
+        type: x.type || 'endereco',
+        received: false,
+        absences: x.absences || (x.type === 'ausencia' ? [x.occurrence] : [])
+      }));
+      localStorage.setItem('devolucoes_v2', JSON.stringify(data));
+    }
+  }
+  if (!received.length) {
+    const oldR = JSON.parse(localStorage.getItem('devolucoes_recebidas') || '[]');
+    if (oldR.length) {
+      received = oldR;
+      localStorage.setItem('devolucoes_recebidas_v2', JSON.stringify(received));
+    }
+  }
+
+  const rules = {
+    endereco: ['Endereço incorreto', 8],
+    recusa: ['Recusa do cliente', 0],
+    ausencia: ['Ausência', null],
+    mudanca: ['Mudança de endereço', 0],
+    impossibilidade: ['Impossibilidade de chegar', 8]
+  };
+
+  const todayISO = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const addDays = (iso, n) => {
+    const d = new Date(iso + 'T12:00:00');
+    d.setDate(d.getDate() + Number(n));
+    return d.toISOString().slice(0, 10);
+  };
+
+  const fmt = iso => {
+    if (!iso) return '—';
+    return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR');
+  };
+
+  const escapeHtml = s => String(s).replace(/[&<>'"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])
+  );
+
+  function absenceState(item) {
+    const dates = [...new Set(item.absences || [item.occurrence])].sort();
+    const count = dates.length;
+    if (count >= 3) {
+      return {
+        label: '3 ocorrências concluídas',
+        cls: 'ok',
+        filter: 'released',
+        next: 'Devolução liberada',
+        release: dates[2]
+      };
+    }
+    const next = addDays(dates[count - 1], 1);
+    const overdue = next <= todayISO();
+    return {
+      label: `Ausência ${count}/3${overdue ? ' — atrasada' : ''}`,
+      cls: overdue ? 'danger' : 'wait',
+      filter: 'waiting',
+      next: `Próxima ocorrência: ${fmt(next)}`,
+      release: null
+    };
+  }
+
+  function status(item) {
+    if (item.received) {
+      return ['Recebida', 'done', 'received', 'Já recebida na base'];
+    }
+    if (item.type === 'ausencia') {
+      const a = absenceState(item);
+      return [a.label, a.cls, a.filter, a.next];
+    }
+    const t = todayISO();
+    if (!item.release) return ['—', 'wait', 'waiting', '—'];
+    if (item.release < t) return ['Liberada', 'ok', 'released', `Liberada em ${fmt(item.release)}`];
+    if (item.release === t) return ['Libera hoje', 'today', 'today', 'Lançar devolução hoje'];
+    return ['Aguardando', 'wait', 'waiting', `Liberar em ${fmt(item.release)}`];
+  }
+
+  function save() {
+    localStorage.setItem('devolucoes_v2', JSON.stringify(data));
+    localStorage.setItem('devolucoes_recebidas_v2', JSON.stringify(received));
+  }
+
+  function show(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(show._timer);
+    show._timer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function render() {
+    const counts = { released: 0, today: 0, waiting: 0, received: 0 };
+    data.forEach(x => {
+      const f = status(x)[2];
+      if (counts[f] !== undefined) counts[f]++;
+    });
+
+    $('total').textContent = data.length;
+    $('released').textContent = counts.released;
+    $('today').textContent = counts.today;
+    $('waiting').textContent = counts.waiting;
+    $('recvCount').textContent = received.length;
+
+    const q = ($('search')?.value || '').trim().toLowerCase();
+    let list = data
+      .filter(x => filter === 'all' || status(x)[2] === filter)
+      .filter(x => !q || x.code.toLowerCase().includes(q))
+      .sort((a, b) => {
+        if (a.received !== b.received) return a.received ? 1 : -1;
+        return (a.release || '9999').localeCompare(b.release || '9999');
+      });
+
+    $('empty').style.display = list.length ? 'none' : 'block';
+    $('rows').innerHTML = list.map(x => {
+      const s = status(x);
+      const r = rules[x.type] || ['', 0];
+      const ruleLabel = x.type === 'ausencia'
+        ? '3 ocorrências (dias distintos)'
+        : (r[1] === 0 ? 'Mesmo dia' : r[1] + ' dias');
+
+      let actions = '';
+      if (!x.received) {
+        if (x.type === 'ausencia') {
+          const dates = [...new Set(x.absences || [x.occurrence])];
+          if (dates.length < 3) {
+            actions += `<button class="ghost smallbtn" onclick="window._addAbsence('${x.id}')">+ Ausência</button>`;
+          }
+        }
+        const st = status(x);
+        if (st[2] === 'released' || st[2] === 'today') {
+          actions += `<button class="primary smallbtn" onclick="window._markReceived('${x.id}')">Receber</button>`;
+        }
+      }
+      actions += `<button class="ghost smallbtn danger-btn" onclick="window._removeItem('${x.id}')">Excluir</button>`;
+
+      return `<tr>
+        <td class="code">${escapeHtml(x.code)}</td>
+        <td>${escapeHtml(r[0])}<br><small>${fmt(x.occurrence)}</small></td>
+        <td>${ruleLabel}</td>
+        <td>${escapeHtml(s[3])}</td>
+        <td><span class="badge ${s[1]}">${escapeHtml(s[0])}</span></td>
+        <td><div class="actions">${actions}</div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderReceived() {
+    const q = ($('recvSearch')?.value || '').trim().toLowerCase();
+    const list = received.filter(x =>
+      !q ||
+      x.code.toLowerCase().includes(q) ||
+      (x.driver || '').toLowerCase().includes(q) ||
+      (x.base || '').toLowerCase().includes(q)
+    );
+    $('receivedEmpty').style.display = list.length ? 'none' : 'block';
+    $('receivedRows').innerHTML = list.map(x => `
+      <tr>
+        <td class="code">${escapeHtml(x.code)}</td>
+        <td>${new Date(x.receivedAt).toLocaleString('pt-BR')}</td>
+        <td>${escapeHtml(x.driver)}</td>
+        <td><span class="badge today">${escapeHtml(x.base)}</span></td>
+        <td><button class="ghost smallbtn danger-btn" onclick="window._removeReceived('${x.id}')">Excluir</button></td>
+      </tr>
+    `).join('');
+  }
+
+  window._removeItem = id => {
+    if (!confirm('Excluir este pacote?')) return;
+    data = data.filter(x => x.id !== id);
+    save();
+    render();
+    show('Pacote removido.');
+  };
+
+  window._removeReceived = id => {
+    if (!confirm('Excluir este registro de recebimento?')) return;
+    received = received.filter(x => x.id !== id);
+    save();
+    renderReceived();
+    render();
+    show('Registro removido.');
+  };
+
+  window._addAbsence = id => {
+    const item = data.find(x => x.id === id);
+    if (!item || item.type !== 'ausencia') return;
+    const dates = [...new Set(item.absences || [item.occurrence])];
+    if (dates.length >= 3) {
+      show('Já possui 3 ocorrências.');
+      return;
+    }
+    absenceTargetId = id;
+    $('absenceModalInfo').textContent = `Pacote: ${item.code} — ocorrência atual: ${dates.length}/3`;
+    $('absenceDate').value = todayISO();
+    $('absenceModal').classList.add('open');
+  };
+
+  window._markReceived = id => {
+    const item = data.find(x => x.id === id);
+    if (!item) return;
+    document.querySelectorAll('[data-tab]').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === 'recebidas');
+    });
+    $('tabOcorrencias').style.display = 'none';
+    $('tabRecebidas').style.display = 'block';
+    $('occTable').style.display = 'none';
+    $('receivedTable').style.display = 'block';
+    $('recvCode').value = item.code;
+    $('driver').focus();
+    show('Informe o motorista e confirme o recebimento.');
+  };
+
+  $('absenceCancel').onclick = () => {
+    $('absenceModal').classList.remove('open');
+    absenceTargetId = null;
+  };
+  $('absenceConfirm').onclick = () => {
+    const date = $('absenceDate').value;
+    if (!date || !absenceTargetId) return;
+    const item = data.find(x => x.id === absenceTargetId);
+    if (!item) return;
+
+    const dates = [...new Set(item.absences || [item.occurrence])];
+    if (dates.includes(date)) {
+      show('Já existe ocorrência nesta data. Use outro dia.');
+      return;
+    }
+    const last = dates.sort().pop();
+    if (date < last) {
+      if (!confirm('A data é anterior à última ocorrência. Continuar mesmo assim?')) return;
+    }
+
+    item.absences = [...dates, date].sort();
+    if (item.absences.length >= 3) {
+      item.release = item.absences[2];
+    }
+    save();
+    render();
+    $('absenceModal').classList.remove('open');
+    absenceTargetId = null;
+    show(item.absences.length >= 3
+      ? '3ª ausência registrada. Devolução liberada!'
+      : `Ausência ${item.absences.length}/3 registrada.`);
+  };
+
+  $('add').onclick = () => {
+    const code = $('code').value.trim().toUpperCase();
+    const occ = $('date').value;
+    const type = $('type').value;
+    if (!code || !occ) {
+      show('Preencha o código e a data.');
+      return;
+    }
+    if (data.some(x => x.code === code && !x.received)) {
+      show('Já existe um pacote ativo com este código.');
+      return;
+    }
+    const rule = rules[type];
+    const item = {
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+      code,
+      occurrence: occ,
+      type,
+      days: rule[1],
+      release: type === 'ausencia' ? null : addDays(occ, rule[1]),
+      absences: type === 'ausencia' ? [occ] : [],
+      received: false
+    };
+    data.unshift(item);
+    save();
+    $('code').value = '';
+    $('date').value = todayISO();
+    render();
+    show(type === 'ausencia'
+      ? '1ª ausência registrada. Use + Ausência para as próximas.'
+      : 'Ocorrência cadastrada.');
+  };
+
+  $('receive').onclick = () => {
+    const code = $('recvCode').value.trim().toUpperCase();
+    const driver = $('driver').value.trim();
+    const base = $('base').value;
+    if (!code || !driver) {
+      show('Informe o código e o motorista.');
+      return;
+    }
+    received.unshift({
+      id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+      code,
+      driver,
+      base,
+      receivedAt: new Date().toISOString()
+    });
+    const match = data.find(x => x.code === code && !x.received);
+    if (match) match.received = true;
+    save();
+    $('recvCode').value = '';
+    $('driver').value = '';
+    renderReceived();
+    render();
+    show('Devolução registrada com data e hora.');
+  };
+
+  const onEnter = (id, fn) => {
+    $(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); fn(); }
+    });
+  };
+  onEnter('code', () => $('add').click());
+  onEnter('recvCode', () => $('receive').click());
+  onEnter('driver', () => $('receive').click());
+
+  document.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('[data-tab]').forEach(x => x.classList.remove('active'));
+      btn.classList.add('active');
+      const isRecv = btn.dataset.tab === 'recebidas';
+      $('tabOcorrencias').style.display = isRecv ? 'none' : 'block';
+      $('tabRecebidas').style.display = isRecv ? 'block' : 'none';
+      $('occTable').style.display = isRecv ? 'none' : 'block';
+      $('receivedTable').style.display = isRecv ? 'block' : 'none';
+      if (isRecv) renderReceived();
+      else render();
+    };
+  });
+
+  document.querySelectorAll('#occTable [data-filter]').forEach(btn => {
+    btn.onclick = () => {
+      filter = btn.dataset.filter;
+      document.querySelectorAll('#occTable [data-filter]').forEach(x => x.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    };
+  });
+
+  $('search').oninput = render;
+  $('recvSearch').oninput = renderReceived;
+
+  $('exportCsv').onclick = () => {
+    if (!data.length) {
+      show('Nada para exportar.');
+      return;
+    }
+    const header = ['Código', 'Tipo', 'Data ocorrência', 'Liberação', 'Status', 'Recebido'];
+    const rows = data.map(x => {
+      const s = status(x);
+      const r = rules[x.type] || ['', ''];
+      return [
+        x.code,
+        r[0],
+        x.occurrence,
+        x.release || '',
+        s[0],
+        x.received ? 'Sim' : 'Não'
+      ].map(c => `"${String(c).replace(/"/g, '""')}"`).join(';');
+    });
+    const bom = '\uFEFF';
+    const csv = bom + header.join(';') + '\n' + rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `devolucoes_${todayISO()}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    show('CSV exportado.');
+  };
+
+  function clock() {
+    const now = new Date();
+    $('clock').textContent = now.toLocaleString('pt-BR', {
+      dateStyle: 'full',
+      timeStyle: 'short'
+    });
+  }
+  clock();
+  setInterval(clock, 30000);
+
+  if (!data.length) {
+    const iso = n => {
+      const x = new Date();
+      x.setHours(12, 0, 0, 0);
+      x.setDate(x.getDate() + n);
+      return x.toISOString().slice(0, 10);
+    };
+    data = [
+      { id: 'demo1', code: 'JT-DEMO-001', occurrence: iso(-8), type: 'endereco', days: 8, release: iso(0), absences: [], received: false },
+      { id: 'demo2', code: 'JT-DEMO-002', occurrence: iso(-3), type: 'endereco', days: 8, release: iso(5), absences: [], received: false },
+      { id: 'demo3', code: 'JT-DEMO-003', occurrence: iso(-12), type: 'impossibilidade', days: 8, release: iso(-4), absences: [], received: false },
+      { id: 'demo4', code: 'JT-DEMO-004', occurrence: iso(-2), type: 'ausencia', days: null, release: null, absences: [iso(-2)], received: false },
+      { id: 'demo5', code: 'JT-DEMO-005', occurrence: iso(0), type: 'recusa', days: 0, release: iso(0), absences: [], received: false }
+    ];
+    save();
+  }
+
+  $('date').value = todayISO();
+  render();
+  renderReceived();
+})();
+</script>
+</body>
+</html>
